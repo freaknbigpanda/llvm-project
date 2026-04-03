@@ -95,6 +95,8 @@ bool FixItRewriter::WriteFixedFiles(
   for (iterator I = buffer_begin(), E = buffer_end(); I != E; ++I) {
     OptionalFileEntryRef Entry =
         Rewrite.getSourceMgr().getFileEntryRefForID(I->first);
+    if (!Entry)
+      continue;
     int fd;
     std::string Filename =
         FixItOpts->RewriteFilename(std::string(Entry->getName()), fd);

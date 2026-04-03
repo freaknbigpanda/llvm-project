@@ -319,6 +319,8 @@ bool Rewriter::overwriteChangedFiles() {
       DiagnosticsEngine::Error, "unable to overwrite file %0: %1");
   for (buffer_iterator I = buffer_begin(), E = buffer_end(); I != E; ++I) {
     OptionalFileEntryRef Entry = getSourceMgr().getFileEntryRefForID(I->first);
+    if (!Entry)
+      continue;
     llvm::SmallString<128> Path(Entry->getName());
     getSourceMgr().getFileManager().makeAbsolutePath(Path);
     // FIXME(sandboxing): Remove this by adopting `llvm::vfs::OutputBackend`.

@@ -2728,8 +2728,9 @@ Preprocessor::ImportAction Preprocessor::HandleHeaderIncludeOrImport(
           (FileCharacter == SrcMgr::C_User || warnByDefaultOnWrongCase(Name))
               ? diag::pp_nonportable_path
               : diag::pp_nonportable_system_path;
-      Diag(FilenameTok, DiagId) << Path <<
-        FixItHint::CreateReplacement(FilenameRange, Path);
+      auto DB = Diag(FilenameTok, DiagId) << Path;
+      if (!SourceMgr.isWrittenInBuiltinFile(FilenameTok.getLocation()))
+        DB << FixItHint::CreateReplacement(FilenameRange, Path);
     }
   }
 
