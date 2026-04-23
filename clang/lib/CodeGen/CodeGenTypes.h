@@ -89,17 +89,8 @@ class CodeGenTypes {
   llvm::DenseMap<const Type *, llvm::Type *> RecordsWithOpaqueMemberPointers;
 
   static constexpr unsigned FunctionInfosLog2InitSize = 9;
-
   /// Helper for ConvertType.
   llvm::Type *ConvertFunctionTypeInternal(QualType FT);
-
-  // Helper to insert CGFunctionInfo objects
-  CGFunctionInfo *findOrInsertCGFunctionInfo(
-      bool isInstanceMethod, bool isChainCall, bool isDelegateCall,
-      unsigned X86AVXABILevel, const FunctionType::ExtInfo &info,
-      ArrayRef<FunctionProtoType::ExtParameterInfo> paramInfos,
-      RequiredArgs required, CanQualType resultType,
-      ArrayRef<CanQualType> argTypes);
 
 public:
   CodeGenTypes(CodeGenModule &cgm);
@@ -217,10 +208,9 @@ public:
   /// Free functions are functions that are compatible with an ordinary
   /// C function pointer type.
   const CGFunctionInfo &arrangeFunctionDeclaration(const GlobalDecl GD);
-  const CGFunctionInfo &
-  arrangeFreeFunctionCall(const CallArgList &Args, const FunctionType *Ty,
-                          bool ChainCall,
-                          const FunctionDecl *CalleeDecl = nullptr);
+  const CGFunctionInfo &arrangeFreeFunctionCall(const CallArgList &Args,
+                                                const FunctionType *Ty,
+                                                bool ChainCall);
   const CGFunctionInfo &arrangeFreeFunctionType(CanQual<FunctionProtoType> Ty);
   const CGFunctionInfo &arrangeFreeFunctionType(CanQual<FunctionNoProtoType> Ty);
 
@@ -274,8 +264,7 @@ public:
   const CGFunctionInfo &arrangeCXXMethodCall(const CallArgList &args,
                                              const FunctionProtoType *type,
                                              RequiredArgs required,
-                                             unsigned numPrefixArgs,
-                                             const CXXMethodDecl *MD = nullptr);
+                                             unsigned numPrefixArgs);
   const CGFunctionInfo &
   arrangeUnprototypedMustTailThunk(const CXXMethodDecl *MD);
   const CGFunctionInfo &arrangeMSCtorClosure(const CXXConstructorDecl *CD,
@@ -294,7 +283,7 @@ public:
       CanQualType returnType, FnInfoOpts opts, ArrayRef<CanQualType> argTypes,
       FunctionType::ExtInfo info,
       ArrayRef<FunctionProtoType::ExtParameterInfo> paramInfos,
-      RequiredArgs args, const FunctionDecl *FD = nullptr);
+      RequiredArgs args);
 
   /// Compute a new LLVM record layout object for the given record.
   std::unique_ptr<CGRecordLayout> ComputeRecordLayout(const RecordDecl *D,
