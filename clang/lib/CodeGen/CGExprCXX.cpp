@@ -92,7 +92,8 @@ RValue CodeGenFunction::EmitCXXMemberOrOperatorCall(
   MemberCallInfo CallInfo = commonEmitCXXMemberOrOperatorCall(
       *this, MD, This, ImplicitParam, ImplicitParamTy, CE, Args, RtlArgs);
   auto &FnInfo = CGM.getTypes().arrangeCXXMethodCall(
-      Args, FPT, CallInfo.ReqArgs, CallInfo.PrefixSize, MD);
+      Args, FPT, CallInfo.ReqArgs, CallInfo.PrefixSize,
+      getCurrentFunctionX86AVXABILevel());
   return EmitCall(FnInfo, Callee, ReturnValue, Args, CallOrInvoke,
                   CE && CE == MustTailCall,
                   CE ? CE->getExprLoc() : SourceLocation());
@@ -483,7 +484,8 @@ CodeGenFunction::EmitCXXMemberPointerCallExpr(const CXXMemberCallExpr *E,
   // And the rest of the call args
   EmitCallArgs(Args, FPT, E->arguments());
   return EmitCall(CGM.getTypes().arrangeCXXMethodCall(Args, FPT, required,
-                                                      /*PrefixSize=*/0),
+                                                      /*PrefixSize=*/0,
+                                                      getCurrentFunctionX86AVXABILevel()),
                   Callee, ReturnValue, Args, CallOrInvoke, E == MustTailCall,
                   E->getExprLoc());
 }
@@ -1343,7 +1345,8 @@ static RValue EmitNewDeleteCall(CodeGenFunction &CGF,
   CGCallee Callee = CGCallee::forDirect(CalleePtr, GlobalDecl(CalleeDecl));
   RValue RV =
       CGF.EmitCall(CGF.CGM.getTypes().arrangeFreeFunctionCall(
-                       Args, CalleeType, /*ChainCall=*/false, CalleeDecl),
+                       Args, CalleeType, /*ChainCall=*/false,
+                       CGF.getCurrentFunctionX86AVXABILevel()),
                    Callee, ReturnValueSlot(), Args, &CallOrInvoke);
 
   /// C++1y [expr.new]p10:

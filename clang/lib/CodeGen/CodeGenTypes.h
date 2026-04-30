@@ -213,14 +213,19 @@ public:
   /// Often this will be able to simply return the declaration info.
   const CGFunctionInfo &arrangeCall(const CGFunctionInfo &declFI,
                                     const CallArgList &args);
+  const CGFunctionInfo &arrangeCall(const CGFunctionInfo &declFI,
+                                    const CallArgList &args,
+                                    unsigned X86AVXABILevel);
 
   /// Free functions are functions that are compatible with an ordinary
   /// C function pointer type.
   const CGFunctionInfo &arrangeFunctionDeclaration(const GlobalDecl GD);
   const CGFunctionInfo &
   arrangeFreeFunctionCall(const CallArgList &Args, const FunctionType *Ty,
-                          bool ChainCall,
-                          const FunctionDecl *CalleeDecl = nullptr);
+                          bool ChainCall);
+  const CGFunctionInfo &
+  arrangeFreeFunctionCall(const CallArgList &Args, const FunctionType *Ty,
+                          bool ChainCall, unsigned X86AVXABILevel);
   const CGFunctionInfo &arrangeFreeFunctionType(CanQual<FunctionProtoType> Ty);
   const CGFunctionInfo &arrangeFreeFunctionType(CanQual<FunctionNoProtoType> Ty);
 
@@ -274,8 +279,12 @@ public:
   const CGFunctionInfo &arrangeCXXMethodCall(const CallArgList &args,
                                              const FunctionProtoType *type,
                                              RequiredArgs required,
+                                             unsigned numPrefixArgs);
+  const CGFunctionInfo &arrangeCXXMethodCall(const CallArgList &args,
+                                             const FunctionProtoType *type,
+                                             RequiredArgs required,
                                              unsigned numPrefixArgs,
-                                             const CXXMethodDecl *MD = nullptr);
+                                             unsigned X86AVXABILevel);
   const CGFunctionInfo &
   arrangeUnprototypedMustTailThunk(const CXXMethodDecl *MD);
   const CGFunctionInfo &arrangeMSCtorClosure(const CXXConstructorDecl *CD,
@@ -290,6 +299,11 @@ public:
   /// this.
   ///
   /// \param argTypes - must all actually be canonical as params
+  const CGFunctionInfo &arrangeLLVMFunctionInfo(
+      CanQualType returnType, FnInfoOpts opts, ArrayRef<CanQualType> argTypes,
+      FunctionType::ExtInfo info,
+      ArrayRef<FunctionProtoType::ExtParameterInfo> paramInfos,
+      RequiredArgs args, unsigned X86AVXABILevel);
   const CGFunctionInfo &arrangeLLVMFunctionInfo(
       CanQualType returnType, FnInfoOpts opts, ArrayRef<CanQualType> argTypes,
       FunctionType::ExtInfo info,

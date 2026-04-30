@@ -292,9 +292,9 @@ static void test_x86_avx_abi_codegen_fns(MyASTConsumer *my) {
           CGM, Ctx.getCanonicalType(FPT->getReturnType()), ArgTypes,
           FPT->getExtInfo(), {},
           CodeGen::RequiredArgs::forPrototypePlus(FPT, 0), fd);
-      ASSERT_EQ(FnInfo.getX86AVXABILevel(), 1u);
-      ASSERT_TRUE(FnInfo.getReturnInfo().isDirect());
-      ASSERT_FALSE(FnInfo.arg_begin()->info.isIndirect());
+      ASSERT_EQ(FnInfo.getX86AVXABILevel(), 0u);
+      ASSERT_TRUE(FnInfo.getReturnInfo().isIndirect());
+      ASSERT_TRUE(FnInfo.arg_begin()->info.isIndirect());
       mytest_avx_fn_ok = true;
     } else if (RecordDecl *rd = dyn_cast<RecordDecl>(decl)) {
       if (rd->getName() != "mytest_avx_method_holder")
@@ -312,9 +312,9 @@ static void test_x86_avx_abi_codegen_fns(MyASTConsumer *my) {
           CGM, Ctx.getCanonicalType(FPT->getReturnType()), ArgTypes,
           FPT->getExtInfo(), {},
           CodeGen::RequiredArgs::forPrototypePlus(FPT, 1), MD);
-      ASSERT_EQ(FnInfo.getX86AVXABILevel(), 1u);
-      ASSERT_TRUE(FnInfo.getReturnInfo().isDirect());
-      ASSERT_FALSE(FnInfo.arg_begin()[1].info.isIndirect());
+      ASSERT_EQ(FnInfo.getX86AVXABILevel(), 0u);
+      ASSERT_TRUE(FnInfo.getReturnInfo().isIndirect());
+      ASSERT_TRUE(FnInfo.arg_begin()[1].info.isIndirect());
       mytest_avx_method_ok = true;
     }
   }

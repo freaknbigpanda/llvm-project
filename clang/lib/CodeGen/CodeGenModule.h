@@ -877,6 +877,9 @@ public:
   void maybeSetTrivialComdat(const Decl &D, llvm::GlobalObject &GO);
 
   const ABIInfo &getABIInfo();
+  unsigned getDefaultX86AVXABILevel() const;
+  unsigned getEffectiveX86AVXABILevel(const FunctionDecl *FD) const;
+  
   CGCXXABI &getCXXABI() const { return *ABI; }
   llvm::LLVMContext &getLLVMContext() { return VMContext; }
 

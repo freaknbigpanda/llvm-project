@@ -3517,7 +3517,8 @@ ItaniumCXXABI::getOrCreateVirtualFunctionPointerThunk(const CXXMethodDecl *MD) {
   const FunctionProtoType *FPT = MD->getType()->getAs<FunctionProtoType>();
   RequiredArgs Required = RequiredArgs::forPrototypePlus(FPT, /*this*/ 1);
   const CGFunctionInfo &CallInfo =
-      CGM.getTypes().arrangeCXXMethodCall(CallArgs, FPT, Required, 0, MD);
+      CGM.getTypes().arrangeCXXMethodCall(
+          CallArgs, FPT, Required, 0, CGF.getCurrentFunctionX86AVXABILevel());
   CGCallee Callee = CGCallee::forVirtual(nullptr, GlobalDecl(MD),
                                          getThisAddress(CGF), ThunkTy);
   llvm::CallBase *CallOrInvoke;
