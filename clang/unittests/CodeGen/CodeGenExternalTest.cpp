@@ -10,6 +10,7 @@
 
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/Decl.h"
 #include "clang/AST/GlobalDecl.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Basic/TargetInfo.h"
@@ -171,15 +172,22 @@ const char GenericTestProgram[] =
 
 const char X86AVXABITestProgram[] =
     "typedef float mytest_v8f __attribute__((vector_size(32)));\n"
-    "__attribute__((target(\"avx\"))) mytest_v8f mytest_avx_fn(mytest_v8f x) "
-    "{\n"
-    "  return x;\n"
-    "}\n"
     "struct mytest_avx_method_holder {\n"
     "  __attribute__((target(\"avx\"))) mytest_v8f method(mytest_v8f x) {\n"
     "    return x;\n"
     "  }\n"
-    "};\n";
+    "};\n"
+    "__attribute__((target(\"avx\"))) mytest_v8f mytest_avx_fn(mytest_v8f x) "
+    "{\n"
+    "  return x;\n"
+    "}\n"
+    "__attribute__((target(\"avx\"))) void caller() "
+    "{\n"
+    "  mytest_v8f hello = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};\n"
+    "  mytest_avx_fn(hello);\n"
+    "  mytest_avx_method_holder holder = mytest_avx_method_holder();\n"
+    "  holder.method(hello);\n"
+    "}\n";
 
 static void test_generic_codegen_fns(MyASTConsumer *my) {
   bool mytest_fn_ok = false;
@@ -278,8 +286,22 @@ static void test_x86_avx_abi_codegen_fns(MyASTConsumer *my) {
   CodeGen::CodeGenModule &CGM = my->Builder->CGM();
   const ASTContext &Ctx = my->toplevel_decls.front()->getASTContext();
 
+  // First get the caller decl, which we need to determine call ABI
+  FunctionDecl *callerDecl = nullptr;
   for (auto decl : my->toplevel_decls) {
     if (FunctionDecl *fd = dyn_cast<FunctionDecl>(decl)) {
+      //So this test is just calling arrangeFreeFunctionCall
+      if (fd->getName() != "caller")
+        continue;
+
+      callerDecl = fd;
+      break;
+    }
+  }
+
+  for (auto decl : my->toplevel_decls) {
+    if (FunctionDecl *fd = dyn_cast<FunctionDecl>(decl)) {
+      // So this test is just calling arrangeFreeFunctionCall
       if (fd->getName() != "mytest_avx_fn")
         continue;
 
@@ -291,10 +313,10 @@ static void test_x86_avx_abi_codegen_fns(MyASTConsumer *my) {
       const CodeGen::CGFunctionInfo &FnInfo = CodeGen::arrangeFreeFunctionCall(
           CGM, Ctx.getCanonicalType(FPT->getReturnType()), ArgTypes,
           FPT->getExtInfo(), {},
-          CodeGen::RequiredArgs::forPrototypePlus(FPT, 0), fd);
-      ASSERT_EQ(FnInfo.getX86AVXABILevel(), 0u);
-      ASSERT_TRUE(FnInfo.getReturnInfo().isIndirect());
-      ASSERT_TRUE(FnInfo.arg_begin()->info.isIndirect());
+          CodeGen::RequiredArgs::forPrototypePlus(FPT, 0), callerDecl);
+      ASSERT_EQ(FnInfo.getX86AVXABILevel(), 1U);
+      ASSERT_TRUE(FnInfo.getReturnInfo().isDirect());
+      ASSERT_TRUE(FnInfo.arg_begin()->info.isDirect());
       mytest_avx_fn_ok = true;
     } else if (RecordDecl *rd = dyn_cast<RecordDecl>(decl)) {
       if (rd->getName() != "mytest_avx_method_holder")
@@ -311,10 +333,10 @@ static void test_x86_avx_abi_codegen_fns(MyASTConsumer *my) {
       const CodeGen::CGFunctionInfo &FnInfo = CodeGen::arrangeCXXMethodCall(
           CGM, Ctx.getCanonicalType(FPT->getReturnType()), ArgTypes,
           FPT->getExtInfo(), {},
-          CodeGen::RequiredArgs::forPrototypePlus(FPT, 1), MD);
-      ASSERT_EQ(FnInfo.getX86AVXABILevel(), 0u);
-      ASSERT_TRUE(FnInfo.getReturnInfo().isIndirect());
-      ASSERT_TRUE(FnInfo.arg_begin()[1].info.isIndirect());
+          CodeGen::RequiredArgs::forPrototypePlus(FPT, 1), callerDecl);
+      ASSERT_EQ(FnInfo.getX86AVXABILevel(), 1u);
+      ASSERT_TRUE(FnInfo.getReturnInfo().isDirect());
+      ASSERT_TRUE(FnInfo.arg_begin()[1].info.isDirect());
       mytest_avx_method_ok = true;
     }
   }

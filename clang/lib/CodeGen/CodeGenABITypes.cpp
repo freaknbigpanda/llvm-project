@@ -61,20 +61,21 @@ const CGFunctionInfo &CodeGen::arrangeCXXMethodCall(
     CodeGenModule &CGM, CanQualType returnType, ArrayRef<CanQualType> argTypes,
     FunctionType::ExtInfo info,
     ArrayRef<FunctionProtoType::ExtParameterInfo> paramInfos, RequiredArgs args,
-    const CXXMethodDecl *MD) {
+    const FunctionDecl *CallerFD) {
+      // This is really interesting so there is a CGFunction
   return CGM.getTypes().arrangeLLVMFunctionInfo(
       returnType, FnInfoOpts::IsInstanceMethod, argTypes, info, paramInfos,
-      args, static_cast<unsigned>(CGM.getDefaultX86AVXABILevel()));
+      args, static_cast<unsigned>(CGM.getEffectiveX86AVXABILevel(CallerFD)));
 }
 
 const CGFunctionInfo &CodeGen::arrangeFreeFunctionCall(
     CodeGenModule &CGM, CanQualType returnType, ArrayRef<CanQualType> argTypes,
     FunctionType::ExtInfo info,
     ArrayRef<FunctionProtoType::ExtParameterInfo> paramInfos, RequiredArgs args,
-    const FunctionDecl *FD) {
+    const FunctionDecl *CallerFD) {
   return CGM.getTypes().arrangeLLVMFunctionInfo(
       returnType, FnInfoOpts::None, argTypes, info, paramInfos, args,
-      static_cast<unsigned>(CGM.getDefaultX86AVXABILevel()));
+      static_cast<unsigned>(CGM.getEffectiveX86AVXABILevel(CallerFD)));
 }
 
 ImplicitCXXConstructorArgs
