@@ -1,5 +1,7 @@
 // RUN: %clang_cc1 -triple x86_64-linux-gnu %s -emit-llvm -I%S -std=c++20 -o - | FileCheck %s
-// RUN: %clang_cc1 -triple x86_64-linux-gnu -fclang-abi-compat=22 %s -emit-llvm -I%S -std=c++20 -o - | FileCheck --check-prefix=ABICOMPAT22 %s
+// RUN: %clang_cc1 -triple x86_64-linux-gnu -fclang-abi-compat=22 %s -emit-llvm -I%S -std=c++20 -o - | FileCheck --check-prefix=ABICOMPAT22 --implicit-check-not=@_ZTIZ3foovE --implicit-check-not=@_ZTSZ3foovE %s
+// RUN: %clang_cc1 -triple x86_64-scei-ps4 %s -emit-llvm -I%S -std=c++20 -o - | FileCheck --check-prefix=ABICOMPAT22 --implicit-check-not=@_ZTIZ3foovE --implicit-check-not=@_ZTSZ3foovE %s
+// RUN: %clang_cc1 -triple x86_64-sie-ps5 %s -emit-llvm -I%S -std=c++20 -o - | FileCheck --check-prefix=ABICOMPAT22 --implicit-check-not=@_ZTIZ3foovE --implicit-check-not=@_ZTSZ3foovE %s
 
 // Ensure that local classes mangled with <local-name> while mangling a lamda
 // in default member initializer.

@@ -1069,9 +1069,14 @@ void CXXNameMangler::mangleNameWithAbiTags(
   //
   const DeclContext *DC = Context.getEffectiveDeclContext(ND);
 
+  // PS4/PS5 preserve the Clang 22 spelling for binary compatibility.
+  bool UseLocalNameForLocalClassLambda =
+      !isCompatibleWith(LangOptions::ClangABI::Ver22) &&
+      !getASTContext().getTargetInfo().getTriple().isPS();
+
   if (GetLocalClassDecl(ND) &&
       (!isLambda(ND) || isCompatibleWith(LangOptions::ClangABI::Ver18) ||
-       !isCompatibleWith(LangOptions::ClangABI::Ver22))) {
+       UseLocalNameForLocalClassLambda)) {
     mangleLocalName(GD, AdditionalAbiTags);
     return;
   }
