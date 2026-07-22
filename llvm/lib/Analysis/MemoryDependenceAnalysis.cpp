@@ -304,10 +304,9 @@ MemoryDependenceResults::getInvariantGroupPointerDependency(LoadInst *LI,
   // cast graph down only.
   Value *LoadOperand = LI->getPointerOperand()->stripPointerCasts();
 
-  // It's is not safe to walk the use list of global value, because function
-  // passes aren't allowed to look outside their functions.
-  // FIXME: this could be fixed by filtering instructions from outside
-  // of current function.
+  // Avoid walking the potentially large use list of a global value. Other
+  // constants, such as constant expressions, may also have users in multiple
+  // functions, so filter those users below.
   if (isa<GlobalValue>(LoadOperand))
     return MemDepResult::getUnknown();
 
@@ -323,7 +322,8 @@ MemoryDependenceResults::getInvariantGroupPointerDependency(LoadInst *LI,
 
   for (const Use &Us : LoadOperand->uses()) {
     auto *U = dyn_cast<Instruction>(Us.getUser());
-    if (!U || U == LI || !DT.dominates(U, LI))
+    if (!U || U->getFunction() != LI->getFunction() || U == LI ||
+        !DT.dominates(U, LI))
       continue;
 
     // If we hit load/store with the same invariant.group metadata (and the
