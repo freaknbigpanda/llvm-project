@@ -5,9 +5,9 @@
 declare void @nodup() noduplicate
 declare void @musttail_callee(ptr, ptr, ptr)
 
-define void @test(ptr %dst, ptr %x, ptr %y) {
+define void @test(ptr %dst, ptr %x, ptr %y, i32 %cond) {
 ; CHECK-LABEL: define void @test(
-; CHECK-SAME: ptr [[DST:%.*]], ptr [[X:%.*]], ptr [[Y:%.*]]) #[[ATTR1:[0-9]+]] {
+; CHECK-SAME: ptr [[DST:%.*]], ptr [[X:%.*]], ptr [[Y:%.*]], i32 [[COND:%.*]]) #[[ATTR1:[0-9]+]] {
 ; CHECK-NEXT:  [[ENTRY:.*:]]
 ; CHECK-NEXT:    [[DST10:%.*]] = ptrtoaddr ptr [[DST]] to i64
 ; CHECK-NEXT:    [[Y9:%.*]] = ptrtoaddr ptr [[Y]] to i64
@@ -24,6 +24,8 @@ define void @test(ptr %dst, ptr %x, ptr %y) {
 ; CHECK-NEXT:    [[RT_CONFLICT_ALL:%.*]] = or i1 [[RT_CONFLICT]], [[RT_CONFLICT13]]
 ; CHECK-NEXT:    [[RT_GUARD:%.*]] = freeze i1 [[RT_CONFLICT_ALL]]
 ; CHECK-NEXT:    br i1 [[RT_GUARD]], label %[[ENTRY_RTSCALAR:.*]], label %[[ENTRY_RTVEC:.*]]
+; CHECK:       [[EXIT:.*]]:
+; CHECK-NEXT:    ret void
 ; CHECK:       [[ENTRY_RTVEC]]:
 ; CHECK-NEXT:    [[TMP3:%.*]] = load <4 x double>, ptr [[X]], align 8
 ; CHECK-NEXT:    [[TMP4:%.*]] = load <4 x double>, ptr [[Y]], align 8
@@ -93,10 +95,12 @@ define void @test(ptr %dst, ptr %x, ptr %y) {
 ; CHECK-NEXT:    store double [[D7]], ptr [[DST7]], align 8
 ; CHECK-NEXT:    br label %[[ENTRY_RTCONT]]
 ; CHECK:       [[ENTRY_RTCONT]]:
-; CHECK-NEXT:    ret void
+; CHECK-NEXT:    switch i32 [[COND]], label %[[EXIT]] [
+; CHECK-NEXT:      i32 0, label %[[EXIT]]
+; CHECK-NEXT:    ]
 ;
 ; NOCHK-LABEL: define void @test(
-; NOCHK-SAME: ptr [[DST:%.*]], ptr [[X:%.*]], ptr [[Y:%.*]]) #[[ATTR1:[0-9]+]] {
+; NOCHK-SAME: ptr [[DST:%.*]], ptr [[X:%.*]], ptr [[Y:%.*]], i32 [[COND:%.*]]) #[[ATTR1:[0-9]+]] {
 ; NOCHK-NEXT:  [[ENTRY:.*:]]
 ; NOCHK-NEXT:    [[X0:%.*]] = load double, ptr [[X]], align 8
 ; NOCHK-NEXT:    [[Y0:%.*]] = load double, ptr [[Y]], align 8
@@ -151,6 +155,10 @@ define void @test(ptr %dst, ptr %x, ptr %y) {
 ; NOCHK-NEXT:    [[D7:%.*]] = fdiv double [[X7]], [[Y7]]
 ; NOCHK-NEXT:    [[DST7:%.*]] = getelementptr inbounds double, ptr [[DST]], i64 7
 ; NOCHK-NEXT:    store double [[D7]], ptr [[DST7]], align 8
+; NOCHK-NEXT:    switch i32 [[COND]], label %[[EXIT:.*]] [
+; NOCHK-NEXT:      i32 0, label %[[EXIT]]
+; NOCHK-NEXT:    ]
+; NOCHK:       [[EXIT]]:
 ; NOCHK-NEXT:    ret void
 ;
 entry:
@@ -207,6 +215,13 @@ entry:
   %d7 = fdiv double %x7, %y7
   %dst7 = getelementptr inbounds double, ptr %dst, i64 7
   store double %d7, ptr %dst7, align 8
+
+  ; Also exercise a terminator with multiple edges to the same successor.
+  switch i32 %cond, label %exit [
+  i32 0, label %exit
+  ]
+
+exit:
   ret void
 }
 
